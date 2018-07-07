@@ -8,11 +8,18 @@
 </head>
 <body>
     <h1>欢迎登录：{{user_dict.User.NickName}}</h1>
+    <h1>欢迎登录：{{user_dict.User}}</h1>
+
+    <div>
+        <img src="/get_img" alt="">
+
+    </div>
     <h3>最近联系人</h3>
     <ul>
         {% for user in user_dict.ContactList%}
-        <li>{{user.NickName}}</li>
+        <li>{{user.NickName}} {{user}}</li>
         {% endfor %}
     </ul>
+    <a href="/user_list">查看所有联系人</a>
 </body>
 </html>

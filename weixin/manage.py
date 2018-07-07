@@ -57,6 +57,7 @@ def check_login():
         ticket_ret = requests.get(redirect_uri)
         ticket_dict = xml_parser(ticket_ret.text)
         session['ticket_dict'] = ticket_dict
+        session['ticket_cookie'] = ticket_ret.cookies.get_dict()
         response['code'] = 200
     return jsonify(response)
 
@@ -73,9 +74,9 @@ def index():
 
     data_dict = {
         "BaseRequest":{
-            "DeviceID":"e750865687999321",
+            "DeviceID":"e586351620227078",
             "Sid":ticket_dict.get('wxsid'),
-            "Uin":ticket_dict.get('wxuin'),
+            "Uin":ticket_dict.get('wxuin'), 
             "Skey":ticket_dict.get('skey'),
         }
     }
@@ -87,10 +88,62 @@ def index():
     init_ret.encoding = 'utf-8'
     user_dict = init_ret.json()
     print(user_dict)
+    session['current_user'] = user_dict['User']
     # for user in user_dict['ContactList']:
     #     print(user.get('NickName'))
+    return render_template('index.html',user_dict=user_dict, )
 
-    return render_template('index.html',user_dict=user_dict)
+@app.route('/get_img')
+def get_img():
+    #获取头像
+    current_user = session['current_user']
+    ticket_cookie = session.get('ticket_cookie')
+    head_url = "https://wx.qq.com" + current_user['HeadImgUrl']
+    img_ret = requests.get(head_url,cookies=ticket_cookie,headers={"Content-Type":"image/jpeg"})
+
+    return img_ret.content
+
+@app.route('/user_list')
+def user_list():
+    ticket_dict = session.get('ticket_dict')
+    ticket_cookie = session.get('ticket_cookie')
+    
+    ctime = str(int(time.time() * 1000))
+    skey = ticket_dict.get('skey')
+    user_list_url = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck?r={0}&skey={1}".format(ctime,skey)
+    print(user_list_url)
+
+    r1 = requests.get(user_list_url, ticket_cookie)
+    r1.encoding = "utf-8"
+    wx_user_list = r1.json()
+    for item in wx_user_list:
+        print(item)
+
+    return (wx_user_dict.MemberCount, wx_user_list.MemberList)
+
+@app.route('/send', methods = ['GET','POST'])
+def send():
+    if request.method == "GET":
+        return render_template('send.html')
+    current_user = session['current_user']
+
+    from_user = current_user['UserName']
+    to = requests.form.get('to')
+    content = requests.form.get('content')
+
+    msg_url = "从url中取，拼接字符串"
+    data_dict = {
+        "BaseRequest":{
+            "DeviceID":"e586351620227078",
+            "Sid":ticket_dict.get('wxsid'),
+            "Uin":ticket_dict.get('wxuin'), 
+            "Skey":ticket_dict.get('skey'),
+        },
+        "Msg":{
+            
+        }
+    }
+
 
 if __name__ == '__main__':
     app.run()
