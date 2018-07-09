@@ -87,7 +87,6 @@ def index():
     )
     init_ret.encoding = 'utf-8'
     user_dict = init_ret.json()
-    print(user_dict)
     session['current_user'] = user_dict['User']
     # for user in user_dict['ContactList']:
     #     print(user.get('NickName'))
@@ -107,31 +106,45 @@ def get_img():
 def user_list():
     ticket_dict = session.get('ticket_dict')
     ticket_cookie = session.get('ticket_cookie')
-    
+
     ctime = str(int(time.time() * 1000))
     skey = ticket_dict.get('skey')
-    user_list_url = "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck?r={0}&skey={1}".format(ctime,skey)
-    print(user_list_url)
+    print(123123124)
+    user_list_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxgetcontact?lang=zh_CN&r={0}&seq=0&skey={1}".format(ctime,skey)
+    # print(user_list_url)
+    # ua_headers = {
+    # "Host": "wx.qq.com",
+    # "Pragma": "no-cache",
+    # "Referer": "https://wx.qq.com/?&lang=zh_CN",
+    # "User-Agent" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
+    # }
 
-    r1 = requests.get(user_list_url, ticket_cookie)
+
+    r1 = requests.get(user_list_url, cookies = ticket_cookie)
     r1.encoding = "utf-8"
     wx_user_list = r1.json()
-    for item in wx_user_list:
-        print(item)
+    # for item in wx_user_list:
+    #     print(item)
 
-    return (wx_user_dict.MemberCount, wx_user_list.MemberList)
+
+    #return (wx_user_dict.MemberCount, wx_user_list.MemberList)
+    return render_template("user_list.html",wx_user_dict=wx_user_list)
 
 @app.route('/send', methods = ['GET','POST'])
 def send():
     if request.method == "GET":
         return render_template('send.html')
     current_user = session['current_user']
+    ticket_dict = session.get('ticket_dict')
+
 
     from_user = current_user['UserName']
-    to = requests.form.get('to')
-    content = requests.form.get('content')
+    to = request.form.get('to')
+    content = request.form.get('content')
+    ctime = str(int(time.time() * 1000))
 
-    msg_url = "从url中取，拼接字符串"
+
+    msg_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsg"
     data_dict = {
         "BaseRequest":{
             "DeviceID":"e586351620227078",
@@ -140,9 +153,65 @@ def send():
             "Skey":ticket_dict.get('skey'),
         },
         "Msg":{
+            "ClientMsgId":ctime,
+            "Content":content,
+            "FromUserName":from_user,
+            "LocalID":ctime,
+            "ToUserName":to,
+            "Type":1,
             
         }
     }
+    ticket_cookie = session.get('ticket_cookie')
+
+    ret = requests.post(
+        url = msg_url,
+        data = bytes(json.dumps(data_dict,ensure_ascii=False),encoding = "utf-8"),
+        cookies = ticket_cookie
+    )
+
+    return ret.text
+
+def get_msg(request):
+    ticket_cookie = session.get('ticket_cookie')
+    ticket_dict = session.get('ticket_dict')
+
+    sync_url="https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck"
+    sync_data_list = []
+    for item in USER_INIT_DATA['SyncKey']['List']:
+        temp = "%s_%s" %(item['Key'],item['Val'])
+        sync_data_list.append(temp)
+    sync_data_list = "|".join(sync_data_list)
+    nid = int(time.time())
+    sync_dict = {
+        "r":nid,
+        "skey":ticket_dict['skey'],
+        "sid":ticket_dict["wxsid"],
+        "uin":ticket_dict["wxuin"],
+        "deviced":"e586351620227078",
+        "synckey":sync_data_list
+    }
+    # all_cookie = {}
+    # all_cookie.update(LOGIN_COOKIE_DICT)
+    # all_cookie.update(TICKET_COOKIE_DICT)
+    ticket_cookie = session.get('ticket_cookie')
+    response_sync = requests.get(sync_url, params=sync_dict, cookies=ticket_cookie)
+    print(response_sync.text)
+    if 'selector:"2"' in response_sync.text:
+        fetch_msg_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=%s&skey=%s&pass_ticket=%s"%(ticket_dict['wsid'],ticket_dict['skey'],ticket_dict['pass_ticket'])
+        form_data = {
+
+        }
+        response_fetch_msg = requests.post(fetch_msg_url,json=form_data)
+        response_fetch_msg.encoding = 'utf-8'
+        res_fetch_msg_dict = json.loads(response_fetch_msg.text)
+        USER_INIT_DATA['SyncKey'] = res_fetch_msg_dict['Synckey']
+        for item in res_fetch_msg_dict['AddMsgList']:
+            print(item['Content'],"::::",item['FromUserName'],"to",item['ToUserName'])
+    return "ok"
+
+
+
 
 
 if __name__ == '__main__':
