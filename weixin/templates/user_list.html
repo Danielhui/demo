@@ -11,8 +11,10 @@
         <div style="width: 30% ; float: left">
             <h3>{{wx_user_dict.MemberCount}}</h3>
             <ul>
-                {%for item in wx_user_list.MemberList%}
+                {%for item in wx_user_dict.MemberList%}
                     <li>{{item.NickName}}</li>
+                    <li>{{item.UserName}}</li>
+
                 {%endfor%}
             </ul>
         </div>
