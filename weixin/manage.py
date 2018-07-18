@@ -131,8 +131,13 @@ def user_list():
     wx_user_list = r1.json()
     # for item in wx_user_list:
     #     print(item)
+<<<<<<< HEAD
 
 
+=======
+
+
+>>>>>>> 85a41dcf0648cf0b8476b3b9b1652539b85cc4bf
     #return (wx_user_dict.MemberCount, wx_user_list.MemberList)
     return render_template("user_list.html",wx_user_dict=wx_user_list)
 
@@ -142,9 +147,12 @@ def send():
         return render_template('send.html')
     current_user = session['current_user']
     ticket_dict = session.get('ticket_dict')
+<<<<<<< HEAD
 #   print(current_user)
 
 
+=======
+>>>>>>> 85a41dcf0648cf0b8476b3b9b1652539b85cc4bf
 
 
     from_user = current_user['UserName']
@@ -187,7 +195,11 @@ def get_msg(request):
 
     sync_url="https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck"
     sync_data_list = []
+<<<<<<< HEAD
     for item in session['SyncKey']['List']:
+=======
+    for item in USER_INIT_DATA['SyncKey']['List']:
+>>>>>>> 85a41dcf0648cf0b8476b3b9b1652539b85cc4bf
         temp = "%s_%s" %(item['Key'],item['Val'])
         sync_data_list.append(temp)
     sync_data_list = "|".join(sync_data_list)
@@ -203,11 +215,16 @@ def get_msg(request):
     # all_cookie = {}
     # all_cookie.update(LOGIN_COOKIE_DICT)
     # all_cookie.update(TICKET_COOKIE_DICT)
+<<<<<<< HEAD
+=======
+    ticket_cookie = session.get('ticket_cookie')
+>>>>>>> 85a41dcf0648cf0b8476b3b9b1652539b85cc4bf
     response_sync = requests.get(sync_url, params=sync_dict, cookies=ticket_cookie)
     print(response_sync.text)
     if 'selector:"2"' in response_sync.text:
         fetch_msg_url = "https://wx.qq.com/cgi-bin/mmwebwx-bin/webwxsync?sid=%s&skey=%s&pass_ticket=%s"%(ticket_dict['wsid'],ticket_dict['skey'],ticket_dict['pass_ticket'])
         form_data = {
+<<<<<<< HEAD
                 'BaseRequest': {
                     'DeviceID': 'e531777446530354',
                     'Sid': ticket_dict['wxsid'],
@@ -216,12 +233,18 @@ def get_msg(request):
             },
             'SyncKey': session['SyncKey'],
             'rr': str(time.time())
+=======
+>>>>>>> 85a41dcf0648cf0b8476b3b9b1652539b85cc4bf
 
         }
         response_fetch_msg = requests.post(fetch_msg_url,json=form_data)
         response_fetch_msg.encoding = 'utf-8'
         res_fetch_msg_dict = json.loads(response_fetch_msg.text)
+<<<<<<< HEAD
         # USER_INIT_DATA['SyncKey'] = res_fetch_msg_dict['Synckey']
+=======
+        USER_INIT_DATA['SyncKey'] = res_fetch_msg_dict['Synckey']
+>>>>>>> 85a41dcf0648cf0b8476b3b9b1652539b85cc4bf
         for item in res_fetch_msg_dict['AddMsgList']:
             print(item['Content'],"::::",item['FromUserName'],"to",item['ToUserName'])
     return "ok"
